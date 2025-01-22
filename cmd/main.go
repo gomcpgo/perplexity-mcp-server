@@ -17,7 +17,9 @@ import (
 
 const (
 	perplexityAPIURL = "https://api.perplexity.ai/chat/completions"
-	defaultModel     = "llama-3.1-sonar-small-128k-online"
+	//defaultModel     = "llama-3.1-sonar-small-128k-online"
+
+	defaultModel = "sonar-pro"
 )
 
 type PerplexityServer struct {
@@ -61,7 +63,7 @@ func (s *PerplexityServer) ListTools(ctx context.Context) (*protocol.ListToolsRe
 		Tools: []protocol.Tool{
 			{
 				Name:        "research",
-				Description: "Search the internet and provide up-to-date information about a topic",
+				Description: "Search the internet and provide up-to-date information about a topic using Perplexity.ai's Sonar Pro model",
 				InputSchema: json.RawMessage(`{
 					"type": "object",
 					"properties": {
