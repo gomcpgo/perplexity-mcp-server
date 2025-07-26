@@ -146,7 +146,6 @@ func testSearchWithParameters(ctx context.Context, client *perplexity.Client, cf
 	params := map[string]interface{}{
 		"query":                    "climate change",
 		"search_recency_filter":    "week",
-		"return_citations":         true,
 		"return_related_questions": true,
 		"max_tokens":               float64(512),
 		"temperature":              0.5,
@@ -161,9 +160,9 @@ func testSearchWithParameters(ctx context.Context, client *perplexity.Client, cf
 		return fmt.Errorf("empty result")
 	}
 
-	// Check if citations are included
-	if !contains(result, "Citations:") && params["return_citations"].(bool) {
-		fmt.Println("Warning: Citations requested but not found in response")
+	// Check if citations are included (they should always be)
+	if !contains(result, "Source URLs") {
+		fmt.Println("Warning: Source URLs not found in response")
 	}
 
 	fmt.Printf("Result preview: %.100s...\n", result)

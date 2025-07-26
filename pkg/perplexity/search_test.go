@@ -68,7 +68,6 @@ func createTestConfig() *config.Config {
 		TopP:            0.9,
 		TopK:            0,
 		Timeout:         30 * time.Second,
-		ReturnCitations: true,
 		ReturnImages:    false,
 		ReturnRelated:   false,
 	}
@@ -106,7 +105,6 @@ func TestSearch(t *testing.T) {
 				"query":                  "test query",
 				"search_domain_filter":   []string{"example.com", "test.com"},
 				"search_recency_filter":  types.RecencyWeek,
-				"return_citations":       false,
 				"return_images":          true,
 			},
 			expectedModel: types.ModelSonar,
@@ -117,8 +115,8 @@ func TestSearch(t *testing.T) {
 				if req.SearchRecencyFilter != types.RecencyWeek {
 					t.Errorf("Expected recency filter %s, got %s", types.RecencyWeek, req.SearchRecencyFilter)
 				}
-				if req.ReturnCitations != false {
-					t.Errorf("Expected return_citations false, got %v", req.ReturnCitations)
+				if req.ReturnCitations != true {
+					t.Errorf("Expected return_citations always true, got %v", req.ReturnCitations)
 				}
 				if req.ReturnImages != true {
 					t.Errorf("Expected return_images true, got %v", req.ReturnImages)

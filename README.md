@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server that provides access to Perplexity AI's p
 
 ## Features
 
-The Perplexity MCP server offers four specialized search functions, each optimized for different use cases:
+The Perplexity MCP server offers four specialized search functions, each optimized for different use cases. **All functions automatically return source URLs**, allowing LLMs to fetch additional information if needed.
 
 ### 1. `perplexity_search`
 General web search with real-time information. Best for current events, general knowledge, and quick facts.
@@ -43,7 +43,6 @@ The server requires a Perplexity API key and supports various configuration opti
 - `PERPLEXITY_TOP_P`: Nucleus sampling parameter (default: 0.9)
 - `PERPLEXITY_TOP_K`: Top-k sampling parameter (default: 0)
 - `PERPLEXITY_TIMEOUT`: Request timeout duration (default: 30s)
-- `PERPLEXITY_RETURN_CITATIONS`: Include citations by default (default: true)
 - `PERPLEXITY_RETURN_IMAGES`: Include images by default (default: false)
 - `PERPLEXITY_RETURN_RELATED`: Include related questions by default (default: false)
 
@@ -94,7 +93,6 @@ Perform a general web search.
 - `search_domain_filter`: Array of domains to include
 - `search_exclude_domains`: Array of domains to exclude
 - `search_recency_filter`: Time filter (hour, day, week, month, year)
-- `return_citations`: Include citations
 - `return_images`: Include images
 - `return_related_questions`: Include related questions
 - `max_tokens`: Maximum response tokens
@@ -123,7 +121,6 @@ Search academic papers and scholarly content.
 - `model`: Defaults to 'sonar-pro' for comprehensive academic results
 - `search_domain_filter`: Array of academic domains
 - `search_recency_filter`: Time filter
-- `return_citations`: Include citations (default: true)
 - `max_tokens`: Maximum response tokens
 - `temperature`: Response randomness
 
@@ -149,7 +146,6 @@ Search financial data and SEC filings.
 - `search_recency_filter`: Time filter
 - `date_range_start`: Report start date
 - `date_range_end`: Report end date
-- `return_citations`: Include citations (default: true)
 - `max_tokens`: Maximum response tokens
 
 **Example:**
@@ -198,6 +194,34 @@ Advanced search with comprehensive filtering.
     "technology": "solar"
   }
 }
+```
+
+## Response Format
+
+All search functions return responses in the following format:
+
+1. **Main Content**: The search results and answer
+2. **Source URLs**: A list of source URLs that the LLM can fetch for more details
+3. **Detailed Sources** (if available): Title, URL, and snippet for each source
+4. **Related Questions** (if requested): Suggested follow-up questions
+
+Example response structure:
+```
+[Main search results content...]
+
+## Source URLs
+1. https://example.com/article1
+2. https://example.com/article2
+3. https://example.com/article3
+
+## Detailed Sources
+1. **Article Title**
+   URL: https://example.com/article1
+   Snippet: Brief excerpt from the article...
+
+## Related Questions
+- What are the latest developments?
+- How does this compare to...?
 ```
 
 ## Development

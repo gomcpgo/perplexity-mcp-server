@@ -134,7 +134,7 @@ func buildRequest(query string, params map[string]interface{}, defaultModel stri
 		},
 		MaxTokens:       defaultMaxTokens,
 		Temperature:     defaultTemperature,
-		ReturnCitations: types.DefaultReturnCitations,
+		ReturnCitations: true, // Always return citations for LLM to potentially fetch more info
 	}
 
 	// Override with provided parameters
@@ -154,9 +154,9 @@ func buildRequest(query string, params map[string]interface{}, defaultModel stri
 		req.SearchRecencyFilter = recency
 	}
 
-	if citations, ok := params["return_citations"].(bool); ok {
-		req.ReturnCitations = citations
-	}
+	// Always return citations for LLM to fetch more info if needed
+	// Even if user sets it to false, we override it
+	req.ReturnCitations = true
 
 	if images, ok := params["return_images"].(bool); ok {
 		req.ReturnImages = images
@@ -217,17 +217,29 @@ func formatResponse(resp *types.PerplexityResponse) string {
 
 	content := resp.Choices[0].Message.Content
 
-	// Append citations if available
+	// Always append source URLs if available (for LLM to fetch if needed)
 	if len(resp.Citations) > 0 {
-		content += "\n\nCitations:\n"
-		for i, citation := range resp.Citations {
-			content += fmt.Sprintf("%d. %s\n", i+1, citation)
+		content += "\n\n## Source URLs\n"
+		for i, url := range resp.Citations {
+			content += fmt.Sprintf("%d. %s\n", i+1, url)
+		}
+	}
+
+	// Include detailed search results if available
+	if len(resp.SearchResults) > 0 {
+		content += "\n\n## Detailed Sources\n"
+		for i, result := range resp.SearchResults {
+			content += fmt.Sprintf("\n%d. **%s**\n", i+1, result.Title)
+			content += fmt.Sprintf("   URL: %s\n", result.URL)
+			if result.Snippet != "" {
+				content += fmt.Sprintf("   Snippet: %s\n", result.Snippet)
+			}
 		}
 	}
 
 	// Append related questions if available
 	if len(resp.RelatedQuestions) > 0 {
-		content += "\n\nRelated Questions:\n"
+		content += "\n\n## Related Questions\n"
 		for _, question := range resp.RelatedQuestions {
 			content += fmt.Sprintf("- %s\n", question)
 		}

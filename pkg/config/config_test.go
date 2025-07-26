@@ -33,6 +33,9 @@ func TestLoadConfigWithDefaults(t *testing.T) {
 	if cfg.Timeout != 30*time.Second {
 		t.Errorf("Timeout mismatch: got %v, want %v", cfg.Timeout, 30*time.Second)
 	}
+	if cfg.ReturnImages != types.DefaultReturnImages {
+		t.Errorf("ReturnImages mismatch: got %v, want %v", cfg.ReturnImages, types.DefaultReturnImages)
+	}
 }
 
 func TestLoadConfigMissingAPIKey(t *testing.T) {
@@ -58,7 +61,6 @@ func TestLoadConfigWithCustomValues(t *testing.T) {
 		"PERPLEXITY_TOP_P":            "0.95",
 		"PERPLEXITY_TOP_K":            "10",
 		"PERPLEXITY_TIMEOUT":          "60s",
-		"PERPLEXITY_RETURN_CITATIONS": "false",
 		"PERPLEXITY_RETURN_IMAGES":    "true",
 		"PERPLEXITY_RETURN_RELATED":   "true",
 	}
@@ -93,9 +95,6 @@ func TestLoadConfigWithCustomValues(t *testing.T) {
 	}
 	if cfg.Timeout != 60*time.Second {
 		t.Errorf("Timeout mismatch: got %v, want %v", cfg.Timeout, 60*time.Second)
-	}
-	if cfg.ReturnCitations != false {
-		t.Errorf("ReturnCitations mismatch: got %v, want false", cfg.ReturnCitations)
 	}
 	if cfg.ReturnImages != true {
 		t.Errorf("ReturnImages mismatch: got %v, want true", cfg.ReturnImages)
@@ -163,9 +162,9 @@ func TestLoadConfigInvalidValues(t *testing.T) {
 			name: "invalid boolean",
 			envVars: map[string]string{
 				"PERPLEXITY_API_KEY":          "test-key",
-				"PERPLEXITY_RETURN_CITATIONS": "not-a-bool",
+				"PERPLEXITY_RETURN_IMAGES": "not-a-bool",
 			},
-			wantErr: "invalid PERPLEXITY_RETURN_CITATIONS:",
+			wantErr: "invalid PERPLEXITY_RETURN_IMAGES:",
 		},
 	}
 

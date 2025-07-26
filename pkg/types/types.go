@@ -22,7 +22,6 @@ const (
 	DefaultTemperature     = 0.2
 	DefaultTopP            = 0.9
 	DefaultTopK            = 0
-	DefaultReturnCitations = true
 	DefaultReturnImages    = false
 	DefaultReturnRelated   = false
 	DefaultSearchMode      = "web"

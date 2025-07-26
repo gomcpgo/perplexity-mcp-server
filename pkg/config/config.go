@@ -18,7 +18,6 @@ type Config struct {
 	TopP           float64
 	TopK           int
 	Timeout        time.Duration
-	ReturnCitations bool
 	ReturnImages    bool
 	ReturnRelated   bool
 }
@@ -33,7 +32,6 @@ func LoadConfig() (*Config, error) {
 		TopP:           types.DefaultTopP,
 		TopK:           types.DefaultTopK,
 		Timeout:        30 * time.Second,
-		ReturnCitations: types.DefaultReturnCitations,
 		ReturnImages:    types.DefaultReturnImages,
 		ReturnRelated:   types.DefaultReturnRelated,
 	}
@@ -105,14 +103,6 @@ func LoadConfig() (*Config, error) {
 			return nil, fmt.Errorf("PERPLEXITY_TIMEOUT must be positive")
 		}
 		cfg.Timeout = val
-	}
-
-	if returnCitations := os.Getenv("PERPLEXITY_RETURN_CITATIONS"); returnCitations != "" {
-		val, err := strconv.ParseBool(returnCitations)
-		if err != nil {
-			return nil, fmt.Errorf("invalid PERPLEXITY_RETURN_CITATIONS: %w", err)
-		}
-		cfg.ReturnCitations = val
 	}
 
 	if returnImages := os.Getenv("PERPLEXITY_RETURN_IMAGES"); returnImages != "" {

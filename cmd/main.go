@@ -33,7 +33,7 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 		Tools: []protocol.Tool{
 			{
 				Name:        "perplexity_search",
-				Description: "General web search with real-time information. Best for: current events, general knowledge, quick facts, web content. Use 'sonar' model for quick searches, 'sonar-pro' for comprehensive results.",
+				Description: "General web search with real-time information and source URLs. Best for: current events, general knowledge, quick facts, web content. Always includes source URLs for follow-up fetching. Use 'sonar' model for quick searches, 'sonar-pro' for comprehensive results.",
 				InputSchema: json.RawMessage(`{
 					"type": "object",
 					"properties": {
@@ -61,10 +61,6 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 							"type": "string",
 							"description": "Filter by recency: 'hour' for breaking news, 'day' for today's updates, 'week' for recent events, 'month' for recent trends, 'year' for current year",
 							"enum": ["hour", "day", "week", "month", "year"]
-						},
-						"return_citations": {
-							"type": "boolean",
-							"description": "Include citations in response"
 						},
 						"return_images": {
 							"type": "boolean",
@@ -128,10 +124,6 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 							"description": "Time-based filter",
 							"enum": ["hour", "day", "week", "month", "year"]
 						},
-						"return_citations": {
-							"type": "boolean",
-							"description": "Include citations (default: true)"
-						},
 						"max_tokens": {
 							"type": "number",
 							"description": "Maximum tokens in response"
@@ -184,10 +176,6 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 						"date_range_end": {
 							"type": "string",
 							"description": "End date for reports (YYYY-MM-DD)"
-						},
-						"return_citations": {
-							"type": "boolean",
-							"description": "Include citations (default: true)"
 						},
 						"max_tokens": {
 							"type": "number",
@@ -251,10 +239,6 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 						"date_range_end": {
 							"type": "string",
 							"description": "End date (YYYY-MM-DD)"
-						},
-						"return_citations": {
-							"type": "boolean",
-							"description": "Include citations"
 						},
 						"return_images": {
 							"type": "boolean",

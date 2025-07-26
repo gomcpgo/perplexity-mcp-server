@@ -196,7 +196,6 @@ func TestBuildRequest(t *testing.T) {
 		"model":                    types.ModelSonarPro,
 		"search_domain_filter":     []string{"example.com"},
 		"search_recency_filter":    types.RecencyWeek,
-		"return_citations":         false,
 		"return_images":            true,
 		"max_tokens":               float64(512),
 		"temperature":              0.5,
@@ -219,8 +218,8 @@ func TestBuildRequest(t *testing.T) {
 	if req.SearchRecencyFilter != types.RecencyWeek {
 		t.Errorf("SearchRecencyFilter mismatch: got %s, want %s", req.SearchRecencyFilter, types.RecencyWeek)
 	}
-	if req.ReturnCitations != false {
-		t.Errorf("ReturnCitations mismatch: got %v, want false", req.ReturnCitations)
+	if req.ReturnCitations != true {
+		t.Errorf("ReturnCitations should always be true: got %v", req.ReturnCitations)
 	}
 	if req.ReturnImages != true {
 		t.Errorf("ReturnImages mismatch: got %v, want true", req.ReturnImages)
@@ -273,7 +272,7 @@ func TestFormatResponse(t *testing.T) {
 				},
 				Citations: []string{"https://example.com", "https://test.com"},
 			},
-			want: "Test content\n\nCitations:\n1. https://example.com\n2. https://test.com\n",
+			want: "Test content\n\n## Source URLs\n1. https://example.com\n2. https://test.com\n",
 		},
 		{
 			name: "response with related questions",
@@ -287,7 +286,7 @@ func TestFormatResponse(t *testing.T) {
 				},
 				RelatedQuestions: []string{"Question 1?", "Question 2?"},
 			},
-			want: "Test content\n\nRelated Questions:\n- Question 1?\n- Question 2?\n",
+			want: "Test content\n\n## Related Questions\n- Question 1?\n- Question 2?\n",
 		},
 		{
 			name: "empty response",

@@ -19,9 +19,7 @@ func (c *Client) Search(ctx context.Context, params map[string]interface{}, cfg 
 	req := buildRequest(query, params, cfg.DefaultModel, cfg.MaxTokens, cfg.Temperature)
 
 	// Apply config defaults if not specified in params
-	if _, ok := params["return_citations"]; !ok {
-		req.ReturnCitations = cfg.ReturnCitations
-	}
+	// Citations are always returned (set to true in buildRequest)
 	if _, ok := params["return_images"]; !ok {
 		req.ReturnImages = cfg.ReturnImages
 	}
@@ -53,10 +51,7 @@ func (c *Client) AcademicSearch(ctx context.Context, params map[string]interface
 	// Set academic search mode
 	params["search_mode"] = "academic"
 
-	// Enable citations by default for academic search
-	if _, ok := params["return_citations"]; !ok {
-		params["return_citations"] = true
-	}
+	// Citations are always returned (set to true in buildRequest)
 
 	// Set higher context size for academic content
 	if _, ok := params["search_context_size"]; !ok {
@@ -93,10 +88,7 @@ func (c *Client) FinancialSearch(ctx context.Context, params map[string]interfac
 		params["model"] = types.ModelSonarPro
 	}
 
-	// Enable citations by default for financial search
-	if _, ok := params["return_citations"]; !ok {
-		params["return_citations"] = true
-	}
+	// Citations are always returned (set to true in buildRequest)
 
 	// Build request
 	req := buildRequest(query, params, cfg.DefaultModel, cfg.MaxTokens, cfg.Temperature)
