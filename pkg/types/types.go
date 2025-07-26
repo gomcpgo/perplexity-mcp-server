@@ -2,12 +2,8 @@ package types
 
 // Model constants
 const (
-	ModelSonar             = "sonar"
-	ModelSonarPro          = "sonar-pro"
-	ModelSonarReasoning    = "sonar-reasoning"
-	ModelSonarReasoningPro = "sonar-reasoning-pro"
-	ModelSonarDeepResearch = "sonar-deep-research"
-	ModelR1                = "r1-1776"
+	ModelSonar    = "sonar"
+	ModelSonarPro = "sonar-pro"
 )
 
 // Recency filter constants

@@ -123,7 +123,7 @@ func TestCallAPIError(t *testing.T) {
 					Message: "Invalid API key",
 				},
 			},
-			wantErr: "authentication failed: invalid API key",
+			wantErr: "authentication failed: invalid API key. Please check your PERPLEXITY_API_KEY environment variable",
 		},
 		{
 			name:       "rate limit",
@@ -138,7 +138,7 @@ func TestCallAPIError(t *testing.T) {
 					Message: "Rate limit exceeded",
 				},
 			},
-			wantErr: "rate limit exceeded: Rate limit exceeded",
+			wantErr: "rate limit exceeded: Rate limit exceeded. Try reducing request frequency or using 'sonar' model for lower rate limits",
 		},
 		{
 			name:       "bad request",
@@ -153,7 +153,7 @@ func TestCallAPIError(t *testing.T) {
 					Message: "Invalid model specified",
 				},
 			},
-			wantErr: "bad request: Invalid model specified",
+			wantErr: "bad request: Invalid model specified. Use 'sonar' for quick searches or 'sonar-pro' for comprehensive searches",
 		},
 	}
 

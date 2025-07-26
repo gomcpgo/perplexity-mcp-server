@@ -186,8 +186,8 @@ func TestAcademicSearch(t *testing.T) {
 				"query": "quantum computing research",
 			},
 			verifyRequest: func(r *http.Request, req *types.PerplexityRequest) {
-				if req.Model != types.ModelSonarReasoning {
-					t.Errorf("Expected model %s, got %s", types.ModelSonarReasoning, req.Model)
+				if req.Model != types.ModelSonarPro {
+					t.Errorf("Expected model %s, got %s", types.ModelSonarPro, req.Model)
 				}
 				if req.SearchMode != "academic" {
 					t.Errorf("Expected search_mode academic, got %s", req.SearchMode)
@@ -261,8 +261,8 @@ func TestFinancialSearch(t *testing.T) {
 				"query": "Apple earnings report",
 			},
 			verifyRequest: func(r *http.Request, req *types.PerplexityRequest) {
-				if req.Model != types.ModelSonarReasoningPro {
-					t.Errorf("Expected model %s, got %s", types.ModelSonarReasoningPro, req.Model)
+				if req.Model != types.ModelSonarPro {
+					t.Errorf("Expected model %s, got %s", types.ModelSonarPro, req.Model)
 				}
 				if req.ReturnCitations != true {
 					t.Errorf("Expected return_citations true, got %v", req.ReturnCitations)
@@ -380,10 +380,10 @@ func TestFilteredSearch(t *testing.T) {
 			verifyRequest: func(r *http.Request, req *types.PerplexityRequest) {
 				// The exact content depends on map iteration order, so just check it contains the expected parts
 				content := req.Messages[0].Content
-				if !contains(content, "[Custom Filters:") {
+				if !testContains(content, "[Custom Filters:") {
 					t.Errorf("Expected content to contain custom filters prefix")
 				}
-				if !contains(content, "electric vehicles") {
+				if !testContains(content, "electric vehicles") {
 					t.Errorf("Expected content to contain original query")
 				}
 			},
@@ -410,17 +410,17 @@ func TestFilteredSearch(t *testing.T) {
 	}
 }
 
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && containsAt(s, substr, 0)
+func testContains(s, substr string) bool {
+	return len(s) >= len(substr) && testContainsAt(s, substr, 0)
 }
 
-func containsAt(s, substr string, start int) bool {
+func testContainsAt(s, substr string, start int) bool {
 	if start+len(substr) > len(s) {
 		return false
 	}
 	for i := 0; i < len(substr); i++ {
 		if s[start+i] != substr[i] {
-			return containsAt(s, substr, start+1)
+			return testContainsAt(s, substr, start+1)
 		}
 	}
 	return true

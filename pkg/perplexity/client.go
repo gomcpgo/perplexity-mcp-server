@@ -83,20 +83,43 @@ func (c *Client) callAPI(ctx context.Context, req *types.PerplexityRequest) (*ty
 	return &perplexityResp, nil
 }
 
-// handleAPIError converts API errors to meaningful error messages
+// handleAPIError converts API errors to meaningful error messages with helpful hints
 func handleAPIError(statusCode int, errResp *types.ErrorResponse) error {
 	switch statusCode {
 	case http.StatusUnauthorized:
-		return fmt.Errorf("authentication failed: invalid API key")
+		return fmt.Errorf("authentication failed: invalid API key. Please check your PERPLEXITY_API_KEY environment variable")
 	case http.StatusTooManyRequests:
-		return fmt.Errorf("rate limit exceeded: %s", errResp.Error.Message)
+		return fmt.Errorf("rate limit exceeded: %s. Try reducing request frequency or using 'sonar' model for lower rate limits", errResp.Error.Message)
 	case http.StatusBadRequest:
-		return fmt.Errorf("bad request: %s", errResp.Error.Message)
+		// Add model-specific hints
+		if contains(errResp.Error.Message, "Invalid model") {
+			return fmt.Errorf("bad request: %s. Use 'sonar' for quick searches or 'sonar-pro' for comprehensive searches", errResp.Error.Message)
+		}
+		return fmt.Errorf("bad request: %s. Check your query parameters and try simplifying the request", errResp.Error.Message)
 	case http.StatusInternalServerError:
-		return fmt.Errorf("server error: %s", errResp.Error.Message)
+		return fmt.Errorf("server error: %s. The Perplexity API is experiencing issues, please try again later", errResp.Error.Message)
 	default:
 		return fmt.Errorf("API error (%s): %s", errResp.Error.Type, errResp.Error.Message)
 	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && containsSubstring(s, substr, 0)
+}
+
+func containsSubstring(s, substr string, start int) bool {
+	if start+len(substr) > len(s) {
+		return false
+	}
+	for i := 0; i < len(substr); i++ {
+		if s[start+i] != substr[i] {
+			if start+1 < len(s) {
+				return containsSubstring(s, substr, start+1)
+			}
+			return false
+		}
+	}
+	return true
 }
 
 // buildRequest creates a PerplexityRequest from search parameters

@@ -150,7 +150,7 @@ func TestSearchParametersWithPointers(t *testing.T) {
 
 	params := SearchParameters{
 		Query:           "test query",
-		Model:           ModelSonarReasoning,
+		Model:           ModelSonarPro,
 		ReturnCitations: &boolTrue,
 		MaxTokens:       &intVal,
 		Temperature:     &floatVal,
@@ -184,10 +184,6 @@ func TestModelConstants(t *testing.T) {
 	models := []string{
 		ModelSonar,
 		ModelSonarPro,
-		ModelSonarReasoning,
-		ModelSonarReasoningPro,
-		ModelSonarDeepResearch,
-		ModelR1,
 	}
 
 	for _, model := range models {

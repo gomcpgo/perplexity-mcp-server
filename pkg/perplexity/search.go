@@ -45,9 +45,9 @@ func (c *Client) AcademicSearch(ctx context.Context, params map[string]interface
 		return "", fmt.Errorf("query parameter is required")
 	}
 
-	// Use sonar-reasoning model for academic search if not specified
+	// Use sonar-pro model for academic search if not specified (better depth for scholarly content)
 	if _, ok := params["model"]; !ok {
-		params["model"] = types.ModelSonarReasoning
+		params["model"] = types.ModelSonarPro
 	}
 
 	// Set academic search mode
@@ -88,9 +88,9 @@ func (c *Client) FinancialSearch(ctx context.Context, params map[string]interfac
 		return "", fmt.Errorf("query parameter is required")
 	}
 
-	// Use sonar-reasoning-pro model for financial search if not specified
+	// Use sonar-pro model for financial search if not specified (comprehensive data needed)
 	if _, ok := params["model"]; !ok {
-		params["model"] = types.ModelSonarReasoningPro
+		params["model"] = types.ModelSonarPro
 	}
 
 	// Enable citations by default for financial search

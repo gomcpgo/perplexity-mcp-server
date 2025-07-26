@@ -4,19 +4,19 @@ An MCP (Model Context Protocol) server that provides access to Perplexity AI's p
 
 ## Features
 
-The Perplexity MCP server offers four specialized search functions:
+The Perplexity MCP server offers four specialized search functions, each optimized for different use cases:
 
 ### 1. `perplexity_search`
-General web search with comprehensive parameters for filtering and customization.
+General web search with real-time information. Best for current events, general knowledge, and quick facts.
 
 ### 2. `perplexity_academic_search`
-Specialized search for academic papers and scholarly content with subject area filtering.
+Automatically filters to academic sources (arxiv.org, pubmed, journals). Best for research papers, scientific studies, and scholarly content.
 
 ### 3. `perplexity_financial_search`
-Search financial data, SEC filings, and market information with ticker and report type filtering.
+Optimized for financial domains and recent data. Best for stock analysis, earnings reports, SEC filings, and market trends.
 
 ### 4. `perplexity_filtered_search`
-Advanced search with comprehensive filtering options including content type, language, location, and custom filters.
+Advanced search with multiple filtering options. Best when you need specific domain filtering, content types, or location-based results.
 
 ## Installation
 
@@ -36,7 +36,8 @@ The server requires a Perplexity API key and supports various configuration opti
 
 ### Optional
 - `PERPLEXITY_DEFAULT_MODEL`: Default model to use (default: "sonar")
-  - Available models: `sonar`, `sonar-pro`, `sonar-reasoning`, `sonar-reasoning-pro`, `sonar-deep-research`, `r1-1776`
+  - `sonar`: Fast, cost-effective search for quick facts
+  - `sonar-pro`: Comprehensive search with better depth and coverage
 - `PERPLEXITY_MAX_TOKENS`: Maximum tokens in response (default: 1024)
 - `PERPLEXITY_TEMPERATURE`: Response randomness 0-2 (default: 0.2)
 - `PERPLEXITY_TOP_P`: Nucleus sampling parameter (default: 0.9)
@@ -89,7 +90,7 @@ Perform a general web search.
 
 **Parameters:**
 - `query` (required): The search query
-- `model`: Model to use (sonar, sonar-pro, sonar-reasoning, sonar-reasoning-pro, sonar-deep-research, r1-1776)
+- `model`: Choose 'sonar' for quick searches or 'sonar-pro' for comprehensive results (default: sonar)
 - `search_domain_filter`: Array of domains to include
 - `search_exclude_domains`: Array of domains to exclude
 - `search_recency_filter`: Time filter (hour, day, week, month, year)
@@ -119,7 +120,7 @@ Search academic papers and scholarly content.
 **Parameters:**
 - `query` (required): The academic search query
 - `subject_area`: Academic subject (e.g., "Physics", "Computer Science")
-- `model`: Model to use (defaults to sonar-reasoning)
+- `model`: Defaults to 'sonar-pro' for comprehensive academic results
 - `search_domain_filter`: Array of academic domains
 - `search_recency_filter`: Time filter
 - `return_citations`: Include citations (default: true)
@@ -144,7 +145,7 @@ Search financial data and SEC filings.
 - `ticker`: Stock ticker symbol (e.g., "AAPL")
 - `company_name`: Company name
 - `report_type`: Financial report type (e.g., "10-K", "10-Q", "8-K")
-- `model`: Model to use (defaults to sonar-reasoning-pro)
+- `model`: Defaults to 'sonar-pro' for comprehensive financial data
 - `search_recency_filter`: Time filter
 - `date_range_start`: Report start date
 - `date_range_end`: Report end date
@@ -167,7 +168,7 @@ Advanced search with comprehensive filtering.
 
 **Parameters:**
 - `query` (required): The search query
-- `model`: Model to use (defaults to sonar-pro)
+- `model`: Choose based on needs (defaults to sonar-pro)
 - `search_domain_filter`: Array of domains to include
 - `search_exclude_domains`: Array of domains to exclude
 - `search_recency_filter`: Time filter

@@ -197,10 +197,6 @@ func TestValidateModel(t *testing.T) {
 	validModels := []string{
 		types.ModelSonar,
 		types.ModelSonarPro,
-		types.ModelSonarReasoning,
-		types.ModelSonarReasoningPro,
-		types.ModelSonarDeepResearch,
-		types.ModelR1,
 	}
 
 	for _, model := range validModels {
