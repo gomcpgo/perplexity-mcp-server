@@ -1,75 +1,264 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/gomcpgo/mcp/pkg/handler"
 	"github.com/gomcpgo/mcp/pkg/protocol"
 	"github.com/gomcpgo/mcp/pkg/server"
+	"github.com/prasanthmj/perplexity/pkg/config"
+	"github.com/prasanthmj/perplexity/pkg/perplexity"
+	"github.com/prasanthmj/perplexity/test"
 )
 
-const (
-	perplexityAPIURL = "https://api.perplexity.ai/chat/completions"
-	//defaultModel     = "llama-3.1-sonar-small-128k-online"
-
-	defaultModel = "sonar-pro"
-)
-
-type PerplexityServer struct {
-	apiKey string
+type PerplexityMCPServer struct {
+	client *perplexity.Client
+	config *config.Config
 }
 
-type PerplexityRequest struct {
-	Model    string              `json:"model"`
-	Messages []PerplexityMessage `json:"messages"`
-}
-
-type PerplexityMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type PerplexityResponse struct {
-	ID        string   `json:"id"`
-	Model     string   `json:"model"`
-	Citations []string `json:"citations"`
-	Choices   []Choice `json:"choices"`
-}
-
-type Choice struct {
-	Message struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"message"`
-}
-
-func NewPerplexityServer() (*PerplexityServer, error) {
-	apiKey := os.Getenv("PERPLEXITY_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("PERPLEXITY_API_KEY environment variable is required")
+func NewPerplexityMCPServer(cfg *config.Config) *PerplexityMCPServer {
+	return &PerplexityMCPServer{
+		client: perplexity.NewClient(cfg.APIKey, cfg.Timeout),
+		config: cfg,
 	}
-	return &PerplexityServer{apiKey: apiKey}, nil
 }
 
-func (s *PerplexityServer) ListTools(ctx context.Context) (*protocol.ListToolsResponse, error) {
+func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListToolsResponse, error) {
 	return &protocol.ListToolsResponse{
 		Tools: []protocol.Tool{
 			{
-				Name:        "research",
-				Description: "Search the internet and provide up-to-date information about a topic using Perplexity.ai's Sonar Pro model",
+				Name:        "perplexity_search",
+				Description: "General web search with real-time information and source URLs. Best for: current events, general knowledge, quick facts, web content. Always includes source URLs for follow-up fetching. Use 'sonar' model for quick searches, 'sonar-pro' for comprehensive results.",
 				InputSchema: json.RawMessage(`{
 					"type": "object",
 					"properties": {
 						"query": {
 							"type": "string",
-							"description": "The research query or question"
+							"description": "The search query. Be specific and clear for best results."
+						},
+						"model": {
+							"type": "string",
+							"description": "Choose 'sonar' for quick factual searches (faster, cheaper) or 'sonar-pro' for comprehensive searches (better depth, more thorough)",
+							"enum": ["sonar", "sonar-pro"],
+							"default": "sonar"
+						},
+						"search_domain_filter": {
+							"type": "array",
+							"items": {"type": "string"},
+							"description": "Limit search to specific domains (e.g., ['wikipedia.org', 'nature.com'])"
+						},
+						"search_exclude_domains": {
+							"type": "array",
+							"items": {"type": "string"},
+							"description": "Exclude specific domains from results (e.g., ['reddit.com', 'quora.com'])"
+						},
+						"search_recency_filter": {
+							"type": "string",
+							"description": "Filter by recency: 'hour' for breaking news, 'day' for today's updates, 'week' for recent events, 'month' for recent trends, 'year' for current year",
+							"enum": ["hour", "day", "week", "month", "year"]
+						},
+						"return_images": {
+							"type": "boolean",
+							"description": "Include images in response"
+						},
+						"return_related_questions": {
+							"type": "boolean",
+							"description": "Include related questions"
+						},
+						"max_tokens": {
+							"type": "number",
+							"description": "Maximum tokens in response"
+						},
+						"temperature": {
+							"type": "number",
+							"description": "Response randomness (0-2)"
+						},
+						"date_range_start": {
+							"type": "string",
+							"description": "Start date for filtering (YYYY-MM-DD)"
+						},
+						"date_range_end": {
+							"type": "string",
+							"description": "End date for filtering (YYYY-MM-DD)"
+						},
+						"location": {
+							"type": "string",
+							"description": "Location for geo-specific search"
+						}
+					},
+					"required": ["query"]
+				}`),
+			},
+			{
+				Name:        "perplexity_academic_search",
+				Description: "Search academic papers, research articles, and scholarly content. Automatically filters to academic sources (arxiv.org, pubmed, journals). Best for: research papers, scientific studies, academic citations.",
+				InputSchema: json.RawMessage(`{
+					"type": "object",
+					"properties": {
+						"query": {
+							"type": "string",
+							"description": "The academic search query. Include key terms, authors, or specific topics."
+						},
+						"subject_area": {
+							"type": "string",
+							"description": "Optional: Specify academic field to narrow results (e.g., 'Physics', 'Computer Science', 'Medicine')"
+						},
+						"model": {
+							"type": "string",
+							"description": "Defaults to 'sonar-pro' for comprehensive academic results. Use 'sonar' only for quick lookups.",
+							"enum": ["sonar", "sonar-pro"],
+							"default": "sonar-pro"
+						},
+						"search_domain_filter": {
+							"type": "array",
+							"items": {"type": "string"},
+							"description": "List of academic domains to include"
+						},
+						"search_recency_filter": {
+							"type": "string",
+							"description": "Time-based filter",
+							"enum": ["hour", "day", "week", "month", "year"]
+						},
+						"max_tokens": {
+							"type": "number",
+							"description": "Maximum tokens in response"
+						},
+						"temperature": {
+							"type": "number",
+							"description": "Response randomness (0-2)"
+						}
+					},
+					"required": ["query"]
+				}`),
+			},
+			{
+				Name:        "perplexity_financial_search",
+				Description: "Search financial data, SEC filings, earnings reports, and market information. Optimized for financial domains and recent data. Best for: stock analysis, earnings, SEC filings, market trends.",
+				InputSchema: json.RawMessage(`{
+					"type": "object",
+					"properties": {
+						"query": {
+							"type": "string",
+							"description": "The financial search query. Include company names, tickers, or specific financial metrics."
+						},
+						"ticker": {
+							"type": "string",
+							"description": "Optional: Stock ticker symbol (e.g., 'AAPL', 'MSFT') to focus search"
+						},
+						"company_name": {
+							"type": "string",
+							"description": "Optional: Company name to ensure accurate results"
+						},
+						"report_type": {
+							"type": "string",
+							"description": "Optional: SEC report type (e.g., '10-K' for annual, '10-Q' for quarterly, '8-K' for current)"
+						},
+						"model": {
+							"type": "string",
+							"description": "Defaults to 'sonar-pro' for comprehensive financial data. Use 'sonar' for quick stock quotes.",
+							"enum": ["sonar", "sonar-pro"],
+							"default": "sonar-pro"
+						},
+						"search_recency_filter": {
+							"type": "string",
+							"description": "Time-based filter",
+							"enum": ["hour", "day", "week", "month", "year"]
+						},
+						"date_range_start": {
+							"type": "string",
+							"description": "Start date for reports (YYYY-MM-DD)"
+						},
+						"date_range_end": {
+							"type": "string",
+							"description": "End date for reports (YYYY-MM-DD)"
+						},
+						"max_tokens": {
+							"type": "number",
+							"description": "Maximum tokens in response"
+						}
+					},
+					"required": ["query"]
+				}`),
+			},
+			{
+				Name:        "perplexity_filtered_search",
+				Description: "Advanced search with multiple filters. Best for: specific requirements, domain-specific searches, content type filtering, location-based searches. Use when other specialized searches don't fit your needs.",
+				InputSchema: json.RawMessage(`{
+					"type": "object",
+					"properties": {
+						"query": {
+							"type": "string",
+							"description": "The search query"
+						},
+						"model": {
+							"type": "string",
+							"description": "Choose based on needs: 'sonar' for quick filtered searches, 'sonar-pro' for comprehensive filtered results",
+							"enum": ["sonar", "sonar-pro"],
+							"default": "sonar-pro"
+						},
+						"search_domain_filter": {
+							"type": "array",
+							"items": {"type": "string"},
+							"description": "List of domains to include"
+						},
+						"search_exclude_domains": {
+							"type": "array",
+							"items": {"type": "string"},
+							"description": "List of domains to exclude"
+						},
+						"search_recency_filter": {
+							"type": "string",
+							"description": "Time-based filter",
+							"enum": ["hour", "day", "week", "month", "year"]
+						},
+						"content_type": {
+							"type": "string",
+							"description": "Type of content (news, academic, blog, etc.)"
+						},
+						"file_type": {
+							"type": "string",
+							"description": "File type filter (pdf, doc, html, etc.)"
+						},
+						"language": {
+							"type": "string",
+							"description": "Language filter"
+						},
+						"country": {
+							"type": "string",
+							"description": "Country for geo-specific search"
+						},
+						"date_range_start": {
+							"type": "string",
+							"description": "Start date (YYYY-MM-DD)"
+						},
+						"date_range_end": {
+							"type": "string",
+							"description": "End date (YYYY-MM-DD)"
+						},
+						"return_images": {
+							"type": "boolean",
+							"description": "Include images"
+						},
+						"return_related_questions": {
+							"type": "boolean",
+							"description": "Include related questions"
+						},
+						"max_tokens": {
+							"type": "number",
+							"description": "Maximum tokens in response"
+						},
+						"temperature": {
+							"type": "number",
+							"description": "Response randomness (0-2)"
+						},
+						"custom_filters": {
+							"type": "object",
+							"description": "Additional custom filters as key-value pairs"
 						}
 					},
 					"required": ["query"]
@@ -79,107 +268,63 @@ func (s *PerplexityServer) ListTools(ctx context.Context) (*protocol.ListToolsRe
 	}, nil
 }
 
-func (s *PerplexityServer) CallTool(ctx context.Context, req *protocol.CallToolRequest) (*protocol.CallToolResponse, error) {
-	if req.Name != "research" {
+func (s *PerplexityMCPServer) CallTool(ctx context.Context, req *protocol.CallToolRequest) (*protocol.CallToolResponse, error) {
+	var result string
+	var err error
+
+	switch req.Name {
+	case "perplexity_search":
+		result, err = s.client.Search(ctx, req.Arguments, s.config)
+	case "perplexity_academic_search":
+		result, err = s.client.AcademicSearch(ctx, req.Arguments, s.config)
+	case "perplexity_financial_search":
+		result, err = s.client.FinancialSearch(ctx, req.Arguments, s.config)
+	case "perplexity_filtered_search":
+		result, err = s.client.FilteredSearch(ctx, req.Arguments, s.config)
+	default:
 		return nil, fmt.Errorf("unknown tool: %s", req.Name)
 	}
 
-	query, ok := req.Arguments["query"].(string)
-	if !ok {
-		return nil, fmt.Errorf("query must be a string")
-	}
-
-	// Create Perplexity request
-	perplexityReq := PerplexityRequest{
-		Model: defaultModel,
-		Messages: []PerplexityMessage{
-			{
-				Role:    "system",
-				Content: "You are a helpful research assistant. Provide accurate and well-sourced information.",
-			},
-			{
-				Role:    "user",
-				Content: query,
-			},
-		},
-	}
-
-	// Marshal request to JSON
-	reqBody, err := json.Marshal(perplexityReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	// Create HTTP request
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", perplexityAPIURL, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Set headers
-	httpReq.Header.Set("Accept", "application/json")
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+s.apiKey)
-
-	// Make request
-	client := &http.Client{}
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	// Parse response
-	var perplexityResp PerplexityResponse
-	if err := json.Unmarshal(body, &perplexityResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	if len(perplexityResp.Choices) == 0 {
-		return nil, fmt.Errorf("no response choices returned")
-	}
-
-	// Format response with citations
-	content := perplexityResp.Choices[0].Message.Content
-	if len(perplexityResp.Citations) > 0 {
-		content += "\n\nSources:\n"
-		for _, citation := range perplexityResp.Citations {
-			content += fmt.Sprintf("- %s\n", citation)
-		}
+		return nil, err
 	}
 
 	return &protocol.CallToolResponse{
 		Content: []protocol.ToolContent{
 			{
 				Type: "text",
-				Text: content,
+				Text: result,
 			},
 		},
 	}, nil
 }
 
 func main() {
-	perplexityServer, err := NewPerplexityServer()
+	// Parse command line flags
+	testMode := flag.Bool("test", false, "Run integration tests")
+	flag.Parse()
+
+	// Load configuration
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Run tests if requested
+	if *testMode {
+		test.RunIntegrationTests()
+		os.Exit(0)
+	}
+
+	// Create and run MCP server
+	perplexityServer := NewPerplexityMCPServer(cfg)
 
 	registry := handler.NewHandlerRegistry()
 	registry.RegisterToolHandler(perplexityServer)
 
 	srv := server.New(server.Options{
 		Name:     "perplexity",
-		Version:  "1.0.0",
+		Version:  "2.0.0",
 		Registry: registry,
 	})
 

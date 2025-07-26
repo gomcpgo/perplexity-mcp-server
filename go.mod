@@ -1,4 +1,4 @@
-module github.com/gomcpgo/perplexity
+module github.com/prasanthmj/perplexity
 
 go 1.23.4
 
