@@ -137,11 +137,12 @@ func LoadConfig() (*Config, error) {
 // validateModel checks if the model is valid
 func validateModel(model string) error {
 	validModels := map[string]bool{
-		types.ModelSonar:          true,
-		types.ModelSonarPro:       true,
-		types.ModelSonarReasoning: true,
-		types.ModelSonarFinance:   true,
-		types.ModelRelated:        true,
+		types.ModelSonar:             true,
+		types.ModelSonarPro:          true,
+		types.ModelSonarReasoning:    true,
+		types.ModelSonarReasoningPro: true,
+		types.ModelSonarDeepResearch: true,
+		types.ModelR1:                true,
 	}
 
 	if !validModels[model] {

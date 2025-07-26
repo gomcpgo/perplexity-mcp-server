@@ -36,7 +36,7 @@ The server requires a Perplexity API key and supports various configuration opti
 
 ### Optional
 - `PERPLEXITY_DEFAULT_MODEL`: Default model to use (default: "sonar")
-  - Available models: `sonar`, `sonar-pro`, `sonar-reasoning`, `sonar-finance`, `related`
+  - Available models: `sonar`, `sonar-pro`, `sonar-reasoning`, `sonar-reasoning-pro`, `sonar-deep-research`, `r1-1776`
 - `PERPLEXITY_MAX_TOKENS`: Maximum tokens in response (default: 1024)
 - `PERPLEXITY_TEMPERATURE`: Response randomness 0-2 (default: 0.2)
 - `PERPLEXITY_TOP_P`: Nucleus sampling parameter (default: 0.9)
@@ -89,7 +89,7 @@ Perform a general web search.
 
 **Parameters:**
 - `query` (required): The search query
-- `model`: Model to use (sonar, sonar-pro, sonar-reasoning, sonar-finance)
+- `model`: Model to use (sonar, sonar-pro, sonar-reasoning, sonar-reasoning-pro, sonar-deep-research, r1-1776)
 - `search_domain_filter`: Array of domains to include
 - `search_exclude_domains`: Array of domains to exclude
 - `search_recency_filter`: Time filter (hour, day, week, month, year)
@@ -144,7 +144,7 @@ Search financial data and SEC filings.
 - `ticker`: Stock ticker symbol (e.g., "AAPL")
 - `company_name`: Company name
 - `report_type`: Financial report type (e.g., "10-K", "10-Q", "8-K")
-- `model`: Model to use (defaults to sonar-finance)
+- `model`: Model to use (defaults to sonar-reasoning-pro)
 - `search_recency_filter`: Time filter
 - `date_range_start`: Report start date
 - `date_range_end`: Report end date

@@ -88,9 +88,9 @@ func (c *Client) FinancialSearch(ctx context.Context, params map[string]interfac
 		return "", fmt.Errorf("query parameter is required")
 	}
 
-	// Use sonar-finance model for financial search if not specified
+	// Use sonar-reasoning-pro model for financial search if not specified
 	if _, ok := params["model"]; !ok {
-		params["model"] = types.ModelSonarFinance
+		params["model"] = types.ModelSonarReasoningPro
 	}
 
 	// Enable citations by default for financial search

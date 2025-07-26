@@ -185,8 +185,9 @@ func TestModelConstants(t *testing.T) {
 		ModelSonar,
 		ModelSonarPro,
 		ModelSonarReasoning,
-		ModelSonarFinance,
-		ModelRelated,
+		ModelSonarReasoningPro,
+		ModelSonarDeepResearch,
+		ModelR1,
 	}
 
 	for _, model := range models {

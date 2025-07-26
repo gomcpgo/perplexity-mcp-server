@@ -261,8 +261,8 @@ func TestFinancialSearch(t *testing.T) {
 				"query": "Apple earnings report",
 			},
 			verifyRequest: func(r *http.Request, req *types.PerplexityRequest) {
-				if req.Model != types.ModelSonarFinance {
-					t.Errorf("Expected model %s, got %s", types.ModelSonarFinance, req.Model)
+				if req.Model != types.ModelSonarReasoningPro {
+					t.Errorf("Expected model %s, got %s", types.ModelSonarReasoningPro, req.Model)
 				}
 				if req.ReturnCitations != true {
 					t.Errorf("Expected return_citations true, got %v", req.ReturnCitations)

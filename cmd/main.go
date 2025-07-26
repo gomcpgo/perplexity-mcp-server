@@ -43,8 +43,8 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 						},
 						"model": {
 							"type": "string",
-							"description": "Model to use (sonar, sonar-pro, sonar-reasoning, sonar-finance)",
-							"enum": ["sonar", "sonar-pro", "sonar-reasoning", "sonar-finance"]
+							"description": "Model to use (sonar, sonar-pro, sonar-reasoning, sonar-reasoning-pro, sonar-deep-research)",
+							"enum": ["sonar", "sonar-pro", "sonar-reasoning", "sonar-reasoning-pro", "sonar-deep-research", "r1-1776"]
 						},
 						"search_domain_filter": {
 							"type": "array",
@@ -114,7 +114,7 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 						"model": {
 							"type": "string",
 							"description": "Model to use (defaults to sonar-reasoning)",
-							"enum": ["sonar", "sonar-pro", "sonar-reasoning"]
+							"enum": ["sonar", "sonar-pro", "sonar-reasoning", "sonar-reasoning-pro", "sonar-deep-research"]
 						},
 						"search_domain_filter": {
 							"type": "array",
@@ -166,8 +166,8 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 						},
 						"model": {
 							"type": "string",
-							"description": "Model to use (defaults to sonar-finance)",
-							"enum": ["sonar-finance", "sonar-reasoning", "sonar-pro"]
+							"description": "Model to use (defaults to sonar-reasoning-pro)",
+							"enum": ["sonar-reasoning-pro", "sonar-reasoning", "sonar-pro", "sonar"]
 						},
 						"search_recency_filter": {
 							"type": "string",
@@ -207,7 +207,7 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 						"model": {
 							"type": "string",
 							"description": "Model to use (defaults to sonar-pro)",
-							"enum": ["sonar", "sonar-pro", "sonar-reasoning"]
+							"enum": ["sonar", "sonar-pro", "sonar-reasoning", "sonar-reasoning-pro", "sonar-deep-research"]
 						},
 						"search_domain_filter": {
 							"type": "array",
