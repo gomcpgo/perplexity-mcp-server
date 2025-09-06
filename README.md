@@ -30,7 +30,7 @@ Manage previously saved search results for easy reference and reuse.
 2. Clone this repository
 3. Build the server:
    ```bash
-   ./run.sh
+   ./run.sh build
    ```
 
 ## Configuration
@@ -60,15 +60,34 @@ The server requires a Perplexity API key and supports various configuration opti
 Run the server in MCP mode (default):
 ```bash
 export PERPLEXITY_API_KEY="your-api-key"
-./perplexity
+./run.sh run
+# or directly: ./perplexity
 ```
 
-### Test Mode
+### Terminal Mode (CLI Testing)
+
+Test individual functions directly from the command line:
+
+```bash
+export PERPLEXITY_API_KEY="your-api-key"
+
+# Test different search types
+./run.sh search "latest AI news" sonar-pro
+./run.sh academic "quantum computing" sonar-pro
+./run.sh financial "AAPL earnings" sonar-pro
+./run.sh filtered "renewable energy" sonar-pro
+
+# Cache management
+./run.sh list                    # List previous queries
+./run.sh get ABC123XYZ0         # Get cached result by ID
+```
+
+### Integration Tests
 
 Run integration tests against the real Perplexity API:
 ```bash
 export PERPLEXITY_API_KEY="your-api-key"
-./perplexity -test
+./run.sh integration-test
 ```
 
 ### MCP Client Configuration
@@ -302,27 +321,47 @@ Example response structure:
 
 Run unit tests:
 ```bash
-go test ./pkg/...
+./run.sh test
 ```
 
 Run integration tests with real API:
 ```bash
-go run cmd/main.go -test
+./run.sh integration-test
 ```
 
 ### Project Structure
+
+The server follows clean architecture principles with separation of concerns:
+
 ```
 perplexity/
 ├── cmd/
-│   └── main.go              # MCP server entry point
+│   └── main.go              # Thin entry point with terminal mode (~200 lines)
 ├── pkg/
-│   ├── types/               # API types and constants
-│   ├── perplexity/          # Perplexity client and search functions
-│   └── config/              # Configuration management
+│   ├── handler/             # MCP protocol layer
+│   │   ├── handler.go       # Main MCP handler  
+│   │   ├── tools.go         # Tool definitions
+│   │   └── search_handlers.go # Parameter extraction
+│   ├── search/              # Core business logic
+│   │   ├── types.go         # Local search types
+│   │   ├── search.go        # Strongly-typed search functions
+│   │   └── client.go        # Perplexity API client
+│   ├── cache/               # Result caching system
+│   ├── config/              # Configuration management
+│   └── types/               # Perplexity API types
 ├── test/
-│   └── integration_test.go  # Integration tests
+│   └── test.go             # Integration tests
 └── README.md
 ```
+
+### Architecture Benefits
+
+- **Thin main.go**: Reduced from 360 to 197 lines (45% reduction)
+- **Terminal mode**: Direct CLI testing without MCP protocol overhead
+- **Separation of concerns**: MCP protocol handling separate from business logic
+- **Strongly-typed**: Core functions use proper Go structs instead of `map[string]interface{}`
+- **Local types**: Each package owns its types, preventing circular dependencies
+- **Easy testing**: Business logic can be tested independently
 
 ## Error Handling
 
