@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/prasanthmj/perplexity/pkg/config"
-	"github.com/prasanthmj/perplexity/pkg/perplexity"
+	"github.com/prasanthmj/perplexity/pkg/search"
 )
 
 // RunIntegrationTests runs integration tests against the real Perplexity API
@@ -20,14 +20,17 @@ func RunIntegrationTests() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Create client
-	client := perplexity.NewClient(cfg.APIKey, cfg.Timeout)
+	// Create searcher
+	searcher, err := search.NewSearcher(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create searcher: %v", err)
+	}
 	ctx := context.Background()
 
 	// Test cases
 	tests := []struct {
 		name   string
-		testFn func(context.Context, *perplexity.Client, *config.Config) error
+		testFn func(context.Context, *search.Searcher, *config.Config) error
 	}{
 		{"General Search", testGeneralSearch},
 		{"Academic Search", testAcademicSearch},
@@ -46,7 +49,7 @@ func RunIntegrationTests() {
 		fmt.Printf("\nRunning: %s\n", test.name)
 		fmt.Println(repeatString("-", 30))
 
-		err := test.testFn(ctx, client, cfg)
+		err := test.testFn(ctx, searcher, cfg)
 		if err != nil {
 			fmt.Printf("❌ FAILED: %v\n", err)
 			failed++
@@ -64,12 +67,13 @@ func RunIntegrationTests() {
 	}
 }
 
-func testGeneralSearch(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
-	params := map[string]interface{}{
-		"query": "What is the capital of France?",
+func testGeneralSearch(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
+	params := &search.SearchParams{
+		Query:      "What is the capital of France?",
+		SearchType: "general",
 	}
 
-	result, err := client.Search(ctx, params, cfg)
+	result, err := searcher.Search(ctx, params)
 	if err != nil {
 		return fmt.Errorf("search failed: %w", err)
 	}
@@ -82,13 +86,14 @@ func testGeneralSearch(ctx context.Context, client *perplexity.Client, cfg *conf
 	return nil
 }
 
-func testAcademicSearch(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
-	params := map[string]interface{}{
-		"query":        "quantum computing applications",
-		"subject_area": "Physics",
+func testAcademicSearch(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
+	params := &search.SearchParams{
+		Query:       "quantum computing applications",
+		SearchType:  "academic",
+		SubjectArea: "Physics",
 	}
 
-	result, err := client.AcademicSearch(ctx, params, cfg)
+	result, err := searcher.AcademicSearch(ctx, params)
 	if err != nil {
 		return fmt.Errorf("academic search failed: %w", err)
 	}
@@ -101,14 +106,15 @@ func testAcademicSearch(ctx context.Context, client *perplexity.Client, cfg *con
 	return nil
 }
 
-func testFinancialSearch(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
-	params := map[string]interface{}{
-		"query":       "latest earnings report",
-		"ticker":      "AAPL",
-		"report_type": "10-K",
+func testFinancialSearch(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
+	params := &search.SearchParams{
+		Query:       "latest earnings report",
+		SearchType:  "financial",
+		Ticker:      "AAPL",
+		ReportType:  "10-K",
 	}
 
-	result, err := client.FinancialSearch(ctx, params, cfg)
+	result, err := searcher.FinancialSearch(ctx, params)
 	if err != nil {
 		return fmt.Errorf("financial search failed: %w", err)
 	}
@@ -121,15 +127,16 @@ func testFinancialSearch(ctx context.Context, client *perplexity.Client, cfg *co
 	return nil
 }
 
-func testFilteredSearch(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
-	params := map[string]interface{}{
-		"query":        "artificial intelligence",
-		"content_type": "news",
-		"language":     "English",
-		"country":      "United States",
+func testFilteredSearch(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
+	params := &search.SearchParams{
+		Query:       "artificial intelligence",
+		SearchType:  "filtered",
+		ContentType: "news",
+		Language:    "English",
+		Country:     "United States",
 	}
 
-	result, err := client.FilteredSearch(ctx, params, cfg)
+	result, err := searcher.FilteredSearch(ctx, params)
 	if err != nil {
 		return fmt.Errorf("filtered search failed: %w", err)
 	}
@@ -142,16 +149,21 @@ func testFilteredSearch(ctx context.Context, client *perplexity.Client, cfg *con
 	return nil
 }
 
-func testSearchWithParameters(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
-	params := map[string]interface{}{
-		"query":                    "climate change",
-		"search_recency_filter":    "week",
-		"return_related_questions": true,
-		"max_tokens":               float64(512),
-		"temperature":              0.5,
+func testSearchWithParameters(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
+	maxTokens := 512
+	temperature := 0.5
+	returnRelated := true
+	
+	params := &search.SearchParams{
+		Query:                    "climate change",
+		SearchType:               "general",
+		SearchRecencyFilter:      "week",
+		ReturnRelatedQuestions:   &returnRelated,
+		MaxTokens:                &maxTokens,
+		Temperature:              &temperature,
 	}
 
-	result, err := client.Search(ctx, params, cfg)
+	result, err := searcher.Search(ctx, params)
 	if err != nil {
 		return fmt.Errorf("search with parameters failed: %w", err)
 	}
@@ -169,14 +181,15 @@ func testSearchWithParameters(ctx context.Context, client *perplexity.Client, cf
 	return nil
 }
 
-func testDomainFiltering(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
-	params := map[string]interface{}{
-		"query":                 "machine learning",
-		"search_domain_filter":  []string{"arxiv.org", "nature.com"},
-		"search_exclude_domains": []string{"wikipedia.org"},
+func testDomainFiltering(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
+	params := &search.SearchParams{
+		Query:                "machine learning",
+		SearchType:           "general",
+		SearchDomainFilter:   []string{"arxiv.org", "nature.com"},
+		SearchExcludeDomains: []string{"wikipedia.org"},
 	}
 
-	result, err := client.Search(ctx, params, cfg)
+	result, err := searcher.Search(ctx, params)
 	if err != nil {
 		return fmt.Errorf("domain filtering search failed: %w", err)
 	}
@@ -189,13 +202,14 @@ func testDomainFiltering(ctx context.Context, client *perplexity.Client, cfg *co
 	return nil
 }
 
-func testErrorHandling(ctx context.Context, client *perplexity.Client, cfg *config.Config) error {
+func testErrorHandling(ctx context.Context, searcher *search.Searcher, cfg *config.Config) error {
 	// Test with empty query
-	params := map[string]interface{}{
-		"query": "",
+	params := &search.SearchParams{
+		Query:      "",
+		SearchType: "general",
 	}
 
-	_, err := client.Search(ctx, params, cfg)
+	_, err := searcher.Search(ctx, params)
 	if err == nil {
 		return fmt.Errorf("expected error for empty query, got nil")
 	}
@@ -203,12 +217,13 @@ func testErrorHandling(ctx context.Context, client *perplexity.Client, cfg *conf
 	fmt.Printf("Expected error received: %v\n", err)
 
 	// Test with invalid model (this will be caught by API)
-	params = map[string]interface{}{
-		"query": "test",
-		"model": "invalid-model-name",
+	params = &search.SearchParams{
+		Query:      "test",
+		SearchType: "general",
+		Model:      "invalid-model-name",
 	}
 
-	_, err = client.Search(ctx, params, cfg)
+	_, err = searcher.Search(ctx, params)
 	if err == nil {
 		// Some APIs might not validate model immediately
 		fmt.Println("Warning: Invalid model was not rejected")
