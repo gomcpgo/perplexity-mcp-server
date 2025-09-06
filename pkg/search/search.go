@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/prasanthmj/perplexity/pkg/cache"
 	"github.com/prasanthmj/perplexity/pkg/config"
@@ -339,12 +340,47 @@ func (s *Searcher) formatResponseWithCache(resp *types.PerplexityResponse, param
 		
 		uniqueID, err := cache.SaveResult(s.config.ResultsRootFolder, params.Query, params.SearchType, model, content, paramsMap)
 		if err == nil && uniqueID != "" {
-			content += fmt.Sprintf("\n\n**Result ID:** %s", uniqueID)
+			// Return artifact-compatible JSON when caching is enabled
+			return s.formatAsArtifactData(uniqueID, content, params, model)
 		}
 		// Silently ignore cache errors - don't break the search functionality
 	}
 	
 	return content
+}
+
+// formatAsArtifactData formats the response as artifact-compatible JSON
+func (s *Searcher) formatAsArtifactData(uniqueID, content string, params *SearchParams, model string) string {
+	// Get current timestamp
+	timestamp := time.Now().Format(time.RFC3339)
+	
+	// Build file paths
+	resultFile := fmt.Sprintf("%s/%s/result.md", s.config.ResultsRootFolder, uniqueID)
+	metadataFile := fmt.Sprintf("%s/%s/metadata.yaml", s.config.ResultsRootFolder, uniqueID)
+	
+	// Create artifact-compatible data structure
+	artifactData := map[string]interface{}{
+		"unique_id":   uniqueID,
+		"query":       params.Query,
+		"search_type": params.SearchType,
+		"model":       model,
+		"timestamp":   timestamp,
+		"status":      "completed",
+		"paths": map[string]interface{}{
+			"result_file":   resultFile,
+			"metadata_file": metadataFile,
+		},
+		"parameters": s.convertParamsToMap(params),
+	}
+	
+	// Marshal to JSON
+	jsonBytes, err := json.MarshalIndent(artifactData, "", "  ")
+	if err != nil {
+		// Fall back to text response if JSON marshaling fails
+		return content + fmt.Sprintf("\n\n**Result ID:** %s", uniqueID)
+	}
+	
+	return string(jsonBytes)
 }
 
 // convertParamsToMap converts SearchParams to map[string]interface{} for cache storage

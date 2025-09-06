@@ -41,7 +41,8 @@ function show_usage() {
 case "$1" in
     build)
         echo "Building perplexity MCP server..."
-        go build -o perplexity ./cmd
+        mkdir -p bin
+        go build -o bin/perplexity ./cmd
         ;;
     
     test)
