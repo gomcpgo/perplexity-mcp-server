@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prasanthmj/perplexity/pkg/cache"
+	"github.com/prasanthmj/perplexity/pkg/config"
 	"github.com/prasanthmj/perplexity/pkg/types"
 )
 
@@ -246,4 +248,68 @@ func formatResponse(resp *types.PerplexityResponse) string {
 	}
 
 	return content
+}
+
+// formatResponseWithCache formats the API response and handles caching
+func formatResponseWithCache(resp *types.PerplexityResponse, query, searchType string, params map[string]interface{}, cfg *config.Config) string {
+	content := formatResponse(resp)
+	
+	// Save to cache if caching is enabled
+	if cache.IsCachingEnabled(cfg.ResultsRootFolder) {
+		model := cfg.DefaultModel
+		if paramModel, ok := params["model"].(string); ok && paramModel != "" {
+			model = paramModel
+		}
+		
+		uniqueID, err := cache.SaveResult(cfg.ResultsRootFolder, query, searchType, model, content, params)
+		if err == nil && uniqueID != "" {
+			content += fmt.Sprintf("\n\n**Result ID:** %s", uniqueID)
+		}
+		// Silently ignore cache errors - don't break the search functionality
+	}
+	
+	return content
+}
+
+// ListPrevious lists previous cached queries
+func (c *Client) ListPrevious(ctx context.Context, cfg *config.Config) (string, error) {
+	if !cache.IsCachingEnabled(cfg.ResultsRootFolder) {
+		return "[]", fmt.Errorf("results caching is not enabled. Set PERPLEXITY_RESULTS_ROOT_FOLDER environment variable to enable caching")
+	}
+	
+	queries, err := cache.ListPreviousQueries(cfg.ResultsRootFolder)
+	if err != nil {
+		return "", fmt.Errorf("failed to list previous queries: %w", err)
+	}
+	
+	if len(queries) == 0 {
+		return "[]", fmt.Errorf("no previous queries found. The results folder may be empty or not configured properly")
+	}
+	
+	// Convert to JSON
+	jsonBytes, err := json.MarshalIndent(queries, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to format query list: %w", err)
+	}
+	
+	return string(jsonBytes), nil
+}
+
+// GetPreviousResult retrieves a cached result by unique ID
+func (c *Client) GetPreviousResult(ctx context.Context, params map[string]interface{}, cfg *config.Config) (string, error) {
+	if !cache.IsCachingEnabled(cfg.ResultsRootFolder) {
+		return "", fmt.Errorf("results caching is not enabled. Set PERPLEXITY_RESULTS_ROOT_FOLDER environment variable to enable caching")
+	}
+	
+	uniqueID, ok := params["unique_id"].(string)
+	if !ok || uniqueID == "" {
+		return "", fmt.Errorf("unique_id parameter is required")
+	}
+	
+	result, err := cache.GetPreviousResult(cfg.ResultsRootFolder, uniqueID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get previous result: %w", err)
+	}
+	
+	return result, nil
 }

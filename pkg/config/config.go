@@ -11,29 +11,31 @@ import (
 
 // Config holds the configuration for the Perplexity MCP server
 type Config struct {
-	APIKey         string
-	DefaultModel   string
-	MaxTokens      int
-	Temperature    float64
-	TopP           float64
-	TopK           int
-	Timeout        time.Duration
-	ReturnImages    bool
-	ReturnRelated   bool
+	APIKey              string
+	DefaultModel        string
+	MaxTokens           int
+	Temperature         float64
+	TopP                float64
+	TopK                int
+	Timeout             time.Duration
+	ReturnImages        bool
+	ReturnRelated       bool
+	ResultsRootFolder   string
 }
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		// Set defaults
-		DefaultModel:    types.DefaultModel,
-		MaxTokens:       types.DefaultMaxTokens,
-		Temperature:     types.DefaultTemperature,
-		TopP:           types.DefaultTopP,
-		TopK:           types.DefaultTopK,
-		Timeout:        30 * time.Second,
-		ReturnImages:    types.DefaultReturnImages,
-		ReturnRelated:   types.DefaultReturnRelated,
+		DefaultModel:      types.DefaultModel,
+		MaxTokens:         types.DefaultMaxTokens,
+		Temperature:       types.DefaultTemperature,
+		TopP:             types.DefaultTopP,
+		TopK:             types.DefaultTopK,
+		Timeout:          30 * time.Second,
+		ReturnImages:      types.DefaultReturnImages,
+		ReturnRelated:     types.DefaultReturnRelated,
+		ResultsRootFolder: "", // Empty by default - no caching if not set
 	}
 
 	// API Key is required
@@ -120,6 +122,9 @@ func LoadConfig() (*Config, error) {
 		}
 		cfg.ReturnRelated = val
 	}
+
+	// Results folder is optional - empty string means no caching
+	cfg.ResultsRootFolder = os.Getenv("PERPLEXITY_RESULTS_ROOT_FOLDER")
 
 	return cfg, nil
 }

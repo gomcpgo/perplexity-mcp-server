@@ -264,6 +264,29 @@ func (s *PerplexityMCPServer) ListTools(ctx context.Context) (*protocol.ListTool
 					"required": ["query"]
 				}`),
 			},
+			{
+				Name:        "list_previous",
+				Description: "List previous search queries with their unique IDs, sorted by recency. Returns JSON array with query details.",
+				InputSchema: json.RawMessage(`{
+					"type": "object",
+					"properties": {},
+					"required": []
+				}`),
+			},
+			{
+				Name:        "get_previous_result",
+				Description: "Retrieve a previously cached search result by its unique ID.",
+				InputSchema: json.RawMessage(`{
+					"type": "object",
+					"properties": {
+						"unique_id": {
+							"type": "string",
+							"description": "The unique 10-character alphanumeric ID of the cached result to retrieve"
+						}
+					},
+					"required": ["unique_id"]
+				}`),
+			},
 		},
 	}, nil
 }
@@ -281,6 +304,10 @@ func (s *PerplexityMCPServer) CallTool(ctx context.Context, req *protocol.CallTo
 		result, err = s.client.FinancialSearch(ctx, req.Arguments, s.config)
 	case "perplexity_filtered_search":
 		result, err = s.client.FilteredSearch(ctx, req.Arguments, s.config)
+	case "list_previous":
+		result, err = s.client.ListPrevious(ctx, s.config)
+	case "get_previous_result":
+		result, err = s.client.GetPreviousResult(ctx, req.Arguments, s.config)
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", req.Name)
 	}

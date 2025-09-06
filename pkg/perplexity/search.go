@@ -33,7 +33,7 @@ func (c *Client) Search(ctx context.Context, params map[string]interface{}, cfg 
 		return "", err
 	}
 
-	return formatResponse(resp), nil
+	return formatResponseWithCache(resp, query, "general", params, cfg), nil
 }
 
 // AcademicSearch performs an academic-focused search
@@ -73,7 +73,7 @@ func (c *Client) AcademicSearch(ctx context.Context, params map[string]interface
 		return "", err
 	}
 
-	return formatResponse(resp), nil
+	return formatResponseWithCache(resp, query, "academic", params, cfg), nil
 }
 
 // FinancialSearch performs a financial/SEC filing focused search
@@ -126,7 +126,7 @@ func (c *Client) FinancialSearch(ctx context.Context, params map[string]interfac
 		return "", err
 	}
 
-	return formatResponse(resp), nil
+	return formatResponseWithCache(resp, query, "financial", params, cfg), nil
 }
 
 // FilteredSearch performs an advanced search with comprehensive filtering options
@@ -199,5 +199,5 @@ func (c *Client) FilteredSearch(ctx context.Context, params map[string]interface
 		return "", err
 	}
 
-	return formatResponse(resp), nil
+	return formatResponseWithCache(resp, query, "filtered", params, cfg), nil
 }

@@ -4,19 +4,25 @@ An MCP (Model Context Protocol) server that provides access to Perplexity AI's p
 
 ## Features
 
-The Perplexity MCP server offers four specialized search functions, each optimized for different use cases. **All functions automatically return source URLs**, allowing LLMs to fetch additional information if needed.
+The Perplexity MCP server offers **six functions** for comprehensive search and result management:
 
-### 1. `perplexity_search`
-General web search with real-time information. Best for current events, general knowledge, and quick facts.
+### Search Functions (4)
+Each optimized for different use cases. **All functions automatically return source URLs** and save results locally if caching is enabled.
 
-### 2. `perplexity_academic_search`
-Automatically filters to academic sources (arxiv.org, pubmed, journals). Best for research papers, scientific studies, and scholarly content.
+1. **`perplexity_search`**: General web search with real-time information. Best for current events, general knowledge, and quick facts.
 
-### 3. `perplexity_financial_search`
-Optimized for financial domains and recent data. Best for stock analysis, earnings reports, SEC filings, and market trends.
+2. **`perplexity_academic_search`**: Automatically filters to academic sources (arxiv.org, pubmed, journals). Best for research papers, scientific studies, and scholarly content.
 
-### 4. `perplexity_filtered_search`
-Advanced search with multiple filtering options. Best when you need specific domain filtering, content types, or location-based results.
+3. **`perplexity_financial_search`**: Optimized for financial domains and recent data. Best for stock analysis, earnings reports, SEC filings, and market trends.
+
+4. **`perplexity_filtered_search`**: Advanced search with multiple filtering options. Best when you need specific domain filtering, content types, or location-based results.
+
+### Cache Management Functions (2)
+Manage previously saved search results for easy reference and reuse.
+
+5. **`list_previous`**: List all previous search queries with unique IDs, sorted by recency. Returns JSON array with query details.
+
+6. **`get_previous_result`**: Retrieve a previously cached search result by its unique 10-character ID.
 
 ## Installation
 
@@ -45,6 +51,7 @@ The server requires a Perplexity API key and supports various configuration opti
 - `PERPLEXITY_TIMEOUT`: Request timeout duration (default: 30s)
 - `PERPLEXITY_RETURN_IMAGES`: Include images by default (default: false)
 - `PERPLEXITY_RETURN_RELATED`: Include related questions by default (default: false)
+- `PERPLEXITY_RESULTS_ROOT_FOLDER`: Directory to store cached search results (default: empty/disabled)
 
 ## Usage
 
@@ -79,6 +86,26 @@ To use this server with an MCP client, add it to your client configuration:
     }
   }
 }
+```
+
+## Local Result Caching
+
+The server automatically caches search results when `PERPLEXITY_RESULTS_ROOT_FOLDER` is configured:
+
+- **Storage**: Each result is saved in `/unique_id/result.md` with metadata in `/unique_id/metadata.yaml`
+- **Unique IDs**: 10-character alphanumeric identifiers (e.g., `A1B2C3D4E5`)
+- **Result ID**: When caching is enabled, search responses include `**Result ID:** ABC123XYZ0`
+- **No Reuse**: Each search creates a new cached entry, even for identical queries
+- **LLM Integration**: Perfect for LLMs to reference previous searches in conversations
+
+### Cache Management Examples
+
+```bash
+# List previous searches
+echo '{"method": "tools/call", "params": {"name": "list_previous", "arguments": {}}}' | ./perplexity
+
+# Get specific result
+echo '{"method": "tools/call", "params": {"name": "get_previous_result", "arguments": {"unique_id": "A1B2C3D4E5"}}}' | ./perplexity
 ```
 
 ## Function Reference
@@ -196,6 +223,48 @@ Advanced search with comprehensive filtering.
 }
 ```
 
+### list_previous
+
+List all previous search queries with metadata.
+
+**Parameters:** None
+
+**Response:** JSON array with query history, sorted by recency (most recent first).
+
+**Example:**
+```json
+[
+  {
+    "query": "latest AI developments",
+    "unique_id": "A1B2C3D4E5",
+    "datetime": "2025-01-15T10:30:45Z",
+    "search_type": "general"
+  },
+  {
+    "query": "quantum computing research",
+    "unique_id": "X9Y8Z7W6V5",
+    "datetime": "2025-01-15T09:15:30Z",
+    "search_type": "academic"
+  }
+]
+```
+
+### get_previous_result
+
+Retrieve a cached search result by unique ID.
+
+**Parameters:**
+- `unique_id` (required): The 10-character alphanumeric ID of the cached result
+
+**Returns:** The complete markdown result from the cached search.
+
+**Example:**
+```json
+{
+  "unique_id": "A1B2C3D4E5"
+}
+```
+
 ## Response Format
 
 All search functions return responses in the following format:
@@ -204,6 +273,7 @@ All search functions return responses in the following format:
 2. **Source URLs**: A list of source URLs that the LLM can fetch for more details
 3. **Detailed Sources** (if available): Title, URL, and snippet for each source
 4. **Related Questions** (if requested): Suggested follow-up questions
+5. **Result ID** (if caching enabled): Unique 10-character ID for retrieving this result later
 
 Example response structure:
 ```
@@ -222,6 +292,8 @@ Example response structure:
 ## Related Questions
 - What are the latest developments?
 - How does this compare to...?
+
+**Result ID:** A1B2C3D4E5
 ```
 
 ## Development
