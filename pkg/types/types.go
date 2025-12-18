@@ -2,8 +2,11 @@ package types
 
 // Model constants
 const (
-	ModelSonar    = "sonar"
-	ModelSonarPro = "sonar-pro"
+	ModelSonar            = "sonar"
+	ModelSonarPro         = "sonar-pro"
+	ModelSonarReasoning   = "sonar-reasoning"
+	ModelSonarReasoningPro = "sonar-reasoning-pro"
+	ModelSonarDeepResearch = "sonar-deep-research"
 )
 
 // Recency filter constants
@@ -45,6 +48,7 @@ type PerplexityRequest struct {
 	Stream                   bool     `json:"stream,omitempty"`
 	PresencePenalty          float64  `json:"presence_penalty,omitempty"`
 	FrequencyPenalty         float64  `json:"frequency_penalty,omitempty"`
+	SearchDomain             string   `json:"search_domain,omitempty"` // New: "sec" for SEC filings
 	SearchDomainFilter       []string `json:"search_domain_filter,omitempty"`
 	SearchExcludeDomains     []string `json:"search_exclude_domains,omitempty"`
 	ReturnImages             bool     `json:"return_images,omitempty"`
@@ -52,11 +56,13 @@ type PerplexityRequest struct {
 	SearchRecencyFilter      string   `json:"search_recency_filter,omitempty"`
 	ReturnCitations          bool     `json:"return_citations"`
 	CitationQuality          string   `json:"citation_quality,omitempty"`
-	SearchMode               string   `json:"search_mode,omitempty"`
+	SearchMode               string   `json:"search_mode,omitempty"` // New: "academic" for academic filtering
 	DateRangeStart           string   `json:"date_range_start,omitempty"`
 	DateRangeEnd             string   `json:"date_range_end,omitempty"`
+	LatestUpdated            string   `json:"latest_updated,omitempty"` // New: filter by webpage modification date
 	Location                 string   `json:"location,omitempty"`
 	SearchContextSize        int      `json:"search_context_size,omitempty"`
+	ReasoningEffort          string   `json:"reasoning_effort,omitempty"` // New: "low", "medium", "high" for deep research
 }
 
 // PerplexityResponse represents the response from Perplexity API
@@ -67,7 +73,7 @@ type PerplexityResponse struct {
 	Created           int64      `json:"created"`
 	Choices           []Choice   `json:"choices"`
 	Usage             Usage      `json:"usage"`
-	Citations         []string   `json:"citations,omitempty"`
+	Citations         []string   `json:"citations,omitempty"` // Deprecated: use SearchResults instead
 	SearchResults     []SearchResult `json:"search_results,omitempty"`
 	RelatedQuestions  []string   `json:"related_questions,omitempty"`
 }
@@ -90,9 +96,10 @@ type Usage struct {
 
 // SearchResult represents a search result with citation
 type SearchResult struct {
-	URL     string `json:"url"`
-	Title   string `json:"title,omitempty"`
-	Snippet string `json:"snippet,omitempty"`
+	URL             string `json:"url"`
+	Title           string `json:"title,omitempty"`
+	Snippet         string `json:"snippet,omitempty"`
+	PublicationDate string `json:"publication_date,omitempty"` // New: publication date from API
 }
 
 // ErrorResponse represents an error response from the API
@@ -108,6 +115,7 @@ type ErrorResponse struct {
 type SearchParameters struct {
 	Query                    string   `json:"query"`
 	Model                    string   `json:"model,omitempty"`
+	SearchDomain             string   `json:"search_domain,omitempty"` // New: "sec" for SEC filings
 	SearchDomainFilter       []string `json:"search_domain_filter,omitempty"`
 	SearchExcludeDomains     []string `json:"search_exclude_domains,omitempty"`
 	SearchRecencyFilter      string   `json:"search_recency_filter,omitempty"`
@@ -118,12 +126,14 @@ type SearchParameters struct {
 	Temperature              *float64 `json:"temperature,omitempty"`
 	TopP                     *float64 `json:"top_p,omitempty"`
 	TopK                     *int     `json:"top_k,omitempty"`
-	SearchMode               string   `json:"search_mode,omitempty"`
+	SearchMode               string   `json:"search_mode,omitempty"` // New: "academic" for academic mode
 	CitationQuality          string   `json:"citation_quality,omitempty"`
 	DateRangeStart           string   `json:"date_range_start,omitempty"`
 	DateRangeEnd             string   `json:"date_range_end,omitempty"`
+	LatestUpdated            string   `json:"latest_updated,omitempty"` // New: filter by webpage modification date
 	Location                 string   `json:"location,omitempty"`
 	SearchContextSize        *int     `json:"search_context_size,omitempty"`
+	ReasoningEffort          string   `json:"reasoning_effort,omitempty"` // New: "low", "medium", "high"
 }
 
 // AcademicSearchParameters contains parameters specific to academic search

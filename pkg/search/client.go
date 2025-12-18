@@ -69,7 +69,8 @@ func (c *Client) callAPI(ctx context.Context, req *types.PerplexityRequest) (*ty
 	if resp.StatusCode != http.StatusOK {
 		var errResp types.ErrorResponse
 		if err := json.Unmarshal(body, &errResp); err != nil {
-			return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+			// Sanitize error: don't expose raw response body
+			return nil, fmt.Errorf("API error (status %d): failed to parse error response", resp.StatusCode)
 		}
 		return nil, handleAPIError(resp.StatusCode, &errResp)
 	}

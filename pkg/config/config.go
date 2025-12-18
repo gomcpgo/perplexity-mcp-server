@@ -132,12 +132,15 @@ func LoadConfig() (*Config, error) {
 // validateModel checks if the model is valid
 func validateModel(model string) error {
 	validModels := map[string]bool{
-		types.ModelSonar:    true,
-		types.ModelSonarPro: true,
+		types.ModelSonar:            true,
+		types.ModelSonarPro:         true,
+		types.ModelSonarReasoning:   true,
+		types.ModelSonarReasoningPro: true,
+		types.ModelSonarDeepResearch: true,
 	}
 
 	if !validModels[model] {
-		return fmt.Errorf("model '%s' is not valid. Available models: 'sonar' (fast, basic search) or 'sonar-pro' (comprehensive search with better depth)", model)
+		return fmt.Errorf("model '%s' is not valid. Available models: 'sonar', 'sonar-pro', 'sonar-reasoning', 'sonar-reasoning-pro', 'sonar-deep-research'", model)
 	}
 	return nil
 }

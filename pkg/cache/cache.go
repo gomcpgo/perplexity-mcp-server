@@ -3,7 +3,6 @@ package cache
 import (
 	"crypto/rand"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -103,13 +102,13 @@ func SaveResult(rootFolder, query, searchType, model, result string, parameters 
 		return "", fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := ioutil.WriteFile(metadataPath, metadataBytes, 0644); err != nil {
+	if err := os.WriteFile(metadataPath, metadataBytes, 0644); err != nil {
 		return "", fmt.Errorf("failed to write metadata file: %w", err)
 	}
 
 	// Save result
 	resultPath := filepath.Join(resultFolder, resultFile)
-	if err := ioutil.WriteFile(resultPath, []byte(result), 0644); err != nil {
+	if err := os.WriteFile(resultPath, []byte(result), 0644); err != nil {
 		return "", fmt.Errorf("failed to write result file: %w", err)
 	}
 
@@ -128,7 +127,7 @@ func ListPreviousQueries(rootFolder string) ([]QueryListItem, error) {
 	}
 
 	// Read all subdirectories
-	entries, err := ioutil.ReadDir(rootFolder)
+	entries, err := os.ReadDir(rootFolder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read results directory: %w", err)
 	}
@@ -144,7 +143,7 @@ func ListPreviousQueries(rootFolder string) ([]QueryListItem, error) {
 		metadataPath := filepath.Join(rootFolder, uniqueID, metadataFile)
 
 		// Read metadata
-		metadataBytes, err := ioutil.ReadFile(metadataPath)
+		metadataBytes, err := os.ReadFile(metadataPath)
 		if err != nil {
 			continue // Skip if metadata file doesn't exist or can't be read
 		}
@@ -181,7 +180,16 @@ func GetPreviousResult(rootFolder, uniqueID string) (string, error) {
 		return "", fmt.Errorf("invalid unique ID format: must be %d alphanumeric characters", idLength)
 	}
 
-	resultPath := filepath.Join(rootFolder, uniqueID, resultFile)
+	// Sanitize paths to prevent path traversal
+	cleanRootFolder := filepath.Clean(rootFolder)
+	cleanUniqueID := filepath.Clean(uniqueID)
+
+	// Additional check: ensure uniqueID doesn't contain path separators
+	if strings.Contains(cleanUniqueID, string(filepath.Separator)) {
+		return "", fmt.Errorf("invalid unique ID: must not contain path separators")
+	}
+
+	resultPath := filepath.Join(cleanRootFolder, cleanUniqueID, resultFile)
 
 	// Check if result file exists
 	if _, err := os.Stat(resultPath); os.IsNotExist(err) {
@@ -189,7 +197,7 @@ func GetPreviousResult(rootFolder, uniqueID string) (string, error) {
 	}
 
 	// Read result file
-	resultBytes, err := ioutil.ReadFile(resultPath)
+	resultBytes, err := os.ReadFile(resultPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read result file: %w", err)
 	}
