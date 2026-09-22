@@ -20,15 +20,51 @@ type Searcher struct {
 // NewSearcher creates a new searcher instance
 func NewSearcher(cfg *config.Config) (*Searcher, error) {
 	client := NewClient(cfg.APIKey, cfg.Timeout)
-	
+
 	return &Searcher{
 		client: client,
 		config: cfg,
 	}, nil
 }
 
+// validateSearchParams validates search parameters for security and correctness
+func validateSearchParams(params *SearchParams) error {
+	// Validate query length (max 10000 characters to prevent abuse)
+	if len(params.Query) == 0 {
+		return fmt.Errorf("query cannot be empty")
+	}
+	if len(params.Query) > 10000 {
+		return fmt.Errorf("query too long: maximum 10000 characters")
+	}
+
+	// Validate domain filters (max 100 domains to prevent abuse)
+	if len(params.SearchDomainFilter) > 100 {
+		return fmt.Errorf("too many domain filters: maximum 100 domains")
+	}
+	if len(params.SearchExcludeDomains) > 100 {
+		return fmt.Errorf("too many exclude domains: maximum 100 domains")
+	}
+
+	// Validate temperature if specified
+	if params.Temperature != nil && (*params.Temperature < 0 || *params.Temperature > 2) {
+		return fmt.Errorf("temperature must be between 0 and 2")
+	}
+
+	// Validate max tokens if specified
+	if params.MaxTokens != nil && (*params.MaxTokens < 1 || *params.MaxTokens > 100000) {
+		return fmt.Errorf("max_tokens must be between 1 and 100000")
+	}
+
+	return nil
+}
+
 // Search performs a general web search
 func (s *Searcher) Search(ctx context.Context, params *SearchParams) (string, error) {
+	// Validate parameters
+	if err := validateSearchParams(params); err != nil {
+		return "", fmt.Errorf("invalid search parameters: %w", err)
+	}
+
 	// Build request with default model for general search
 	req := s.buildRequest(params, s.config.DefaultModel)
 
@@ -49,8 +85,13 @@ func (s *Searcher) Search(ctx context.Context, params *SearchParams) (string, er
 	return s.formatResponseWithCache(resp, params), nil
 }
 
-// AcademicSearch performs an academic-focused search
+// AcademicSearch performs an academic-focused search using native search_mode: "academic"
 func (s *Searcher) AcademicSearch(ctx context.Context, params *SearchParams) (string, error) {
+	// Validate parameters
+	if err := validateSearchParams(params); err != nil {
+		return "", fmt.Errorf("invalid search parameters: %w", err)
+	}
+
 	// Use sonar-pro model for academic search if not specified
 	if params.Model == "" {
 		params.Model = types.ModelSonarPro
@@ -59,9 +100,13 @@ func (s *Searcher) AcademicSearch(ctx context.Context, params *SearchParams) (st
 	// Build request
 	req := s.buildRequest(params, s.config.DefaultModel)
 
-	// Set academic search mode
+	// Use native academic search mode (new API feature from June 2025)
 	req.SearchMode = "academic"
-	req.SearchContextSize = 10 // Higher context size for academic content
+
+	// Higher context size for academic content (if not specified)
+	if req.SearchContextSize == 0 {
+		req.SearchContextSize = 10
+	}
 
 	// Handle subject area if provided
 	if params.SubjectArea != "" {
@@ -77,8 +122,13 @@ func (s *Searcher) AcademicSearch(ctx context.Context, params *SearchParams) (st
 	return s.formatResponseWithCache(resp, params), nil
 }
 
-// FinancialSearch performs a financial/SEC filing focused search
+// FinancialSearch performs a financial/SEC filing focused search with native SEC domain support
 func (s *Searcher) FinancialSearch(ctx context.Context, params *SearchParams) (string, error) {
+	// Validate parameters
+	if err := validateSearchParams(params); err != nil {
+		return "", fmt.Errorf("invalid search parameters: %w", err)
+	}
+
 	// Use sonar-pro model for financial search if not specified
 	if params.Model == "" {
 		params.Model = types.ModelSonarPro
@@ -86,6 +136,11 @@ func (s *Searcher) FinancialSearch(ctx context.Context, params *SearchParams) (s
 
 	// Build request
 	req := s.buildRequest(params, s.config.DefaultModel)
+
+	// Use native SEC domain filter if report type is specified (new API feature from July 2025)
+	if params.ReportType != "" || params.Ticker != "" {
+		req.SearchDomain = "sec"
+	}
 
 	// Handle financial-specific parameters
 	var contextAdditions []string
@@ -122,6 +177,11 @@ func (s *Searcher) FinancialSearch(ctx context.Context, params *SearchParams) (s
 
 // FilteredSearch performs an advanced search with comprehensive filtering options
 func (s *Searcher) FilteredSearch(ctx context.Context, params *SearchParams) (string, error) {
+	// Validate parameters
+	if err := validateSearchParams(params); err != nil {
+		return "", fmt.Errorf("invalid search parameters: %w", err)
+	}
+
 	// Use sonar-pro model for filtered search if not specified
 	if params.Model == "" {
 		params.Model = types.ModelSonarPro
@@ -293,23 +353,31 @@ func (s *Searcher) formatResponse(resp *types.PerplexityResponse) string {
 
 	content := resp.Choices[0].Message.Content
 
-	// Always append source URLs if available (for LLM to fetch if needed)
-	if len(resp.Citations) > 0 {
-		content += "\n\n## Source URLs\n"
-		for i, url := range resp.Citations {
-			content += fmt.Sprintf("%d. %s\n", i+1, url)
-		}
-	}
-
-	// Include detailed search results if available
+	// Prefer search_results (new API format) over citations (deprecated)
 	if len(resp.SearchResults) > 0 {
+		// Extract URLs for quick reference
+		content += "\n\n## Source URLs\n"
+		for i, result := range resp.SearchResults {
+			content += fmt.Sprintf("%d. %s\n", i+1, result.URL)
+		}
+
+		// Include detailed search results with metadata
 		content += "\n\n## Detailed Sources\n"
 		for i, result := range resp.SearchResults {
 			content += fmt.Sprintf("\n%d. **%s**\n", i+1, result.Title)
 			content += fmt.Sprintf("   URL: %s\n", result.URL)
+			if result.PublicationDate != "" {
+				content += fmt.Sprintf("   Published: %s\n", result.PublicationDate)
+			}
 			if result.Snippet != "" {
 				content += fmt.Sprintf("   Snippet: %s\n", result.Snippet)
 			}
+		}
+	} else if len(resp.Citations) > 0 {
+		// Fallback to citations if search_results not available (legacy API response)
+		content += "\n\n## Source URLs\n"
+		for i, url := range resp.Citations {
+			content += fmt.Sprintf("%d. %s\n", i+1, url)
 		}
 	}
 

@@ -42,8 +42,11 @@ The server requires a Perplexity API key and supports various configuration opti
 
 ### Optional
 - `PERPLEXITY_DEFAULT_MODEL`: Default model to use (default: "sonar")
-  - `sonar`: Fast, cost-effective search for quick facts
+  - `sonar`: Fast, cost-effective search for quick facts (1200 tokens/sec)
   - `sonar-pro`: Comprehensive search with better depth and coverage
+  - `sonar-reasoning`: Chain-of-Thought reasoning for logical tasks
+  - `sonar-reasoning-pro`: Advanced reasoning with enhanced capabilities
+  - `sonar-deep-research`: Most advanced model for research-intensive tasks
 - `PERPLEXITY_MAX_TOKENS`: Maximum tokens in response (default: 1024)
 - `PERPLEXITY_TEMPERATURE`: Response randomness 0-2 (default: 0.2)
 - `PERPLEXITY_TOP_P`: Nucleus sampling parameter (default: 0.9)
@@ -372,6 +375,32 @@ The server handles various error conditions:
 - Server errors (500)
 
 Errors are returned with descriptive messages to help diagnose issues.
+
+## What's New in 2025
+
+This MCP server has been updated to support the latest Perplexity API features:
+
+### New Models (January-August 2025)
+- **sonar-reasoning**: Chain-of-Thought reasoning for logical tasks
+- **sonar-reasoning-pro**: Advanced reasoning capabilities
+- **sonar-deep-research**: Research-intensive tasks with async support
+
+### Enhanced Search Features
+- **Academic Mode** (June 2025): Native `search_mode: "academic"` for peer-reviewed sources
+- **SEC Filings** (July 2025): Direct SEC domain filtering with `search_domain: "sec"`
+- **Latest Updated Filter** (June 2025): Filter by webpage modification dates
+- **Enhanced Search Results**: Detailed metadata including publication dates
+
+### Security Improvements
+- Input validation for all parameters
+- Path traversal protection in cache operations
+- Sanitized error messages
+- Updated to use modern Go stdlib (replaced deprecated `ioutil`)
+
+### API Compatibility
+- Backwards compatible with existing implementations
+- Automatic fallback for deprecated `citations` field
+- Support for both old and new API response formats
 
 ## License
 
