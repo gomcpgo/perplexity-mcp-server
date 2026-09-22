@@ -42,7 +42,7 @@ case "$1" in
     build)
         echo "Building perplexity MCP server..."
         mkdir -p bin
-        go build -o bin/perplexity ./cmd
+        go build -o bin/perplexity-server ./cmd
         ;;
     
     test)
