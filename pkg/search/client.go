@@ -14,6 +14,10 @@ import (
 
 const (
 	baseURL = "https://api.perplexity.ai/chat/completions"
+
+	perplexityAPIHost      = "api.perplexity.ai"
+	integrationHeader      = "X-Pplx-Integration"
+	integrationHeaderValue = "perplexity-mcp-server"
 )
 
 // Client handles Perplexity API communication
@@ -51,6 +55,9 @@ func (c *Client) callAPI(ctx context.Context, req *types.PerplexityRequest) (*ty
 	// Set headers
 	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 	httpReq.Header.Set("Content-Type", "application/json")
+	if httpReq.URL.Hostname() == perplexityAPIHost && httpReq.Header.Get(integrationHeader) == "" {
+		httpReq.Header.Set(integrationHeader, integrationHeaderValue)
+	}
 
 	// Make request
 	resp, err := c.httpClient.Do(httpReq)
